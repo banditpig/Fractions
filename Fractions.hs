@@ -1,15 +1,9 @@
 module Fractions where
-import           Data.Monoid
 import           Data.Ratio
-import           Debug.Trace
-import           Numeric
 
 type Numerator = Integer
 type Denominator = Integer
 data Fraction  = Numbr Numerator | F Numerator Fraction
-
-formatFloatN floatNum numOfDecimals = showFFloat (Just numOfDecimals) floatNum ""
-float20  flt =  formatFloatN flt 10
 
 num :: Fraction -> Integer
 num (Numbr n) = n
@@ -26,15 +20,15 @@ evalFrac f = fromIntegral n / fromIntegral d where
     F n (Numbr d) = reduce . simplify $ f
 
 instance Show Fraction where
-
     show (Numbr n) =  show n
-    show (F _  0) = "Error division by 0 is undefined!"
+    show (F _  0) = "Error. Division by 0 is undefined!"
     show (F n (Numbr d))
         | n == 0 = show 0
         | d == 1 = show n
         | (n > 0 && d < 0) || (n < 0 && d < 0 ) = show (-n) ++ "/" ++ show (-d)
         | otherwise = show n ++ "/" ++ show d
     show (F n f@(F _ _)) = show n ++  "/" ++  show f
+
 
 mul :: Fraction -> Fraction -> Fraction
 mul f f' = mul' (simplify f) (simplify f') where
@@ -103,13 +97,14 @@ instance Num Fraction where
     (*) = mul
     (-) = sub
     abs (Numbr n) = Numbr (abs n)
-    abs (F n d)   = F  (abs n) (abs d)
+    abs f@(F n d)   = F  (abs n') (abs d') where F n' d' = simplify f
     signum (Numbr n) = Numbr (signum n)
-    signum (F n d)
-        | n == 0 =  Numbr 0
-        | n > 0 && d < 0 = Numbr (-1)
-        | n < 0 && d > 0 = Numbr (-1)
-        | otherwise = Numbr 1
+    signum f@(F n d)
+        | n' == 0 =  Numbr 0
+        | n' > 0 && d' < 0 = Numbr (-1)
+        | n' < 0 && d' > 0 = Numbr (-1)
+        | otherwise = Numbr 1 where
+            F n' d' = simplify f
     fromInteger = Numbr
 
 instance Fractional Fraction where
@@ -117,33 +112,15 @@ instance Fractional Fraction where
     fromRational x = F (numerator x) (Numbr (denominator x))
     (/) = divid
 
-
 -- Take a possibly recursive fraction and reduce it to a list of fractions
 flatten :: Fraction -> [Fraction]
 flatten f@(F _ (Numbr _) ) = [f]
 flatten (Numbr n)          = [Numbr n]
 flatten (F n f)            = Numbr n : flatten f
 
+contFrac :: (Integer -> Fraction) -> (Integer -> Numerator) -> Integer -> Fraction
+contFrac fa fb  = rf 0  where
+      rf n t
+        | n > t = 0
+        | otherwise =  fa n + F (fb n) (rf (n + 1) t)
 
-
-f1, f2, f3, f4 :: Fraction
-f1 = 2 + F 2 3
-f2 = 6 + F 4 f1
-f3 = F 6 f2
-f4 = F 1 f3
-z  = F 1 (F 1 (F 4 6))
-
-a = 2 + F 1 2
-b = 2 + F 1 a
-c = 2 + F 1 b
-d = 1 + F 1 c
--- rf (-1) = g 0
-
-rf n  t
-    | n > t = 0
-    | otherwise =  g n + F 1 (rf (n + 1) t ) where
-        g 0 = 1
-        g _ = 2
-
-rf' n = rf 0 n
-    --g' n + F 1 (rf (n - 1))
