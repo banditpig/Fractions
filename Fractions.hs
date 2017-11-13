@@ -3,6 +3,14 @@ import           Data.Ratio
 
 type Numerator = Integer
 type Denominator = Integer
+{-
+So a fraction can be a simple
+3
+3/4
+or
+3 / (4 / (...))
+or a recursive, continued, fraction:
+-}
 data Fraction  = Numbr Numerator | F Numerator Fraction
 
 num :: Fraction -> Integer
@@ -70,7 +78,7 @@ simplify f = foldr simplify' lastFraction remainingFractions where
     -- these are fractions that are p/q i.e q is not a recurring fraction
     simplify' (Numbr p) (Numbr q)               = F p (Numbr q)
     simplify' (Numbr p) (F p' (Numbr q) )       = F (p * q) (Numbr p')
-    simplify' (F p' (Numbr q) ) (Numbr p)       = F (p * p') (Numbr 1)
+    simplify' (F p' (Numbr q) ) (Numbr p)       = F (p') (Numbr (p * q))
     simplify' (F p (Numbr p')) (F q (Numbr q')) = F (p * q')  (Numbr (p' * q))
 
 -- eg reduce 6/10 -> 3/5, reduce 3/5 -> 3/5
@@ -116,11 +124,28 @@ instance Fractional Fraction where
 flatten :: Fraction -> [Fraction]
 flatten f@(F _ (Numbr _) ) = [f]
 flatten (Numbr n)          = [Numbr n]
-flatten (F n f)            = Numbr n : flatten f
+flatten (F p (F q f ))     = F p (Numbr q) : flatten f
 
 contFrac :: (Integer -> Fraction) -> (Integer -> Numerator) -> Integer -> Fraction
 contFrac fa fb  = rf 0  where
       rf n t
         | n > t = 0
         | otherwise =  fa n + F (fb n) (rf (n + 1) t)
+
+
+root2 :: Integer -> Fraction
+root2  = contFrac fa fb  where
+                fa 0 = 1
+                fa _ = 2
+                fb _ = 1
+
+root5 :: Integer -> Fraction
+root5  = contFrac fa fb  where
+                fa 0 = 2
+                fa _ = 4
+                fb _ = 1
+
+
+
+
 
