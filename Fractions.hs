@@ -62,9 +62,7 @@ add f f' = add' (simplify f) (simplify f') where
     add' (Numbr p) (F p' (Numbr q'))       = F (q' * p + p') (Numbr q')
     add' (F p' (Numbr q')) (Numbr p)       = F (q' * p + p') (Numbr q')
     add' (F p (Numbr q)) (F p' (Numbr q')) = F (p * q' + q * p') (Numbr (q * q'))
-    -- (Numbr _) (F _ (F _ _))
-    -- (F _ (Numbr _)) (F _ (F _ _))
-    -- (F _ (F _ _)) _
+
 
 sub :: Fraction -> Fraction -> Fraction
 sub f f' = sub' (simplify f) (simplify f') where
@@ -92,7 +90,6 @@ simplify' :: Fraction -> Fraction -> Fraction
 simplify' (Numbr p) (Numbr q)               = F p (Numbr q)
 simplify' (Numbr p) (F p' (Numbr q) )       = F (p * q) (Numbr p')
 simplify' (F p' (Numbr q) ) (Numbr p)       = F (p * p') (Numbr 1)
--- Note A : simplify' (F p' (Numbr q) ) (Numbr p)       = F p' (Numbr (p * q))
 simplify' (F p (Numbr p')) (F q (Numbr q')) = F (p * q')  (Numbr (p' * q))
 
 -- eg reduce 6/10 -> 3/5, reduce 3/5 -> 3/5
