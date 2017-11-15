@@ -22,7 +22,6 @@ instance Show Fraction where
 
 -- Make Fraction 'into a Number' so that +, * etc can be used.
 instance Num Fraction where
-    -- {-# MINIMAL (+), (*), abs, signum, fromInteger, (negate | (-)) #-}
     (+) = add
     (*) = mul
     (-) = sub
@@ -36,9 +35,9 @@ instance Num Fraction where
         | otherwise = Numbr 1 where
             F n' d' = simplify f
     fromInteger = Numbr
+
 -- Allows the '/' operator to be used with Fraction
 instance Fractional Fraction where
-    --{-# MINIMAL fromRational, (recip | (/)) #-}
     fromRational x = F (numerator x) (Numbr (denominator x))
     (/) = divid
 
