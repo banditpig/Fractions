@@ -20,23 +20,23 @@ instance Show Fraction where
         | otherwise = show n ++ "/" ++ show d
     show (F n f@(F _ _)) = show n ++  "/" ++  show f
 
--- Make Fraction 'into a Number' so that +, * etc can be used.
+-- Make Fraction into a Number so that +, * etc can be used.
 instance Num Fraction where
     (+) = add
     (*) = mul
     (-) = sub
     abs (Numbr n) = Numbr (abs n)
-    abs f@(F n d)   = F  (abs n') (abs d') where F n' d' = simplify f
+    abs f@(F n d)   = F  (abs n1) (abs d1) where F n1 d1 = simplify f
     signum (Numbr n) = Numbr (signum n)
     signum f@(F n d)
-        | n' == 0 =  Numbr 0
-        | n' > 0 && d' < 0 = Numbr (-1)
-        | n' < 0 && d' > 0 = Numbr (-1)
+        | n1 == 0 =  Numbr 0
+        | n1 > 0 && d1 < 0 = Numbr (-1)
+        | n1 < 0 && d1 > 0 = Numbr (-1)
         | otherwise = Numbr 1 where
-            F n' d' = simplify f
+            F n1 d1 = simplify f
     fromInteger = Numbr
 
--- Allows the '/' operator to be used with Fraction
+-- Allows the 1/1 operator to be used with Fraction
 instance Fractional Fraction where
     fromRational x = F (numerator x) (Numbr (denominator x))
     (/) = divid
@@ -55,32 +55,32 @@ instance Ord Fraction where
 -- Fraction specific definitions of basic arithmetic ops. These are referenced
 -- in the previous typeclass definitions.
 mul :: Fraction -> Fraction -> Fraction
-mul f f' = mul' (simplify f) (simplify f') where
-    mul' (Numbr p) (Numbr q)               = Numbr (p * q)
-    mul' (Numbr p) (F p' (Numbr q'))       = F (p * p') (Numbr q')
-    mul' (F p' (Numbr q')) (Numbr p)       = F (p * p') (Numbr q')
-    mul' (F p (Numbr q)) (F p' (Numbr q')) = F (p * p') (Numbr (q * q'))
+mul f f1 = mul1 (simplify f) (simplify f1) where
+    mul1 (Numbr p) (Numbr q)               = Numbr (p * q)
+    mul1 (Numbr p) (F p1 (Numbr q1))       = F (p * p1) (Numbr q1)
+    mul1 (F p1 (Numbr q1)) (Numbr p)       = F (p * p1) (Numbr q1)
+    mul1 (F p (Numbr q)) (F p1 (Numbr q1)) = F (p * p1) (Numbr (q * q1))
 
 add :: Fraction -> Fraction -> Fraction
-add f f' = add' (simplify f) (simplify f') where
-    add' (Numbr p) (Numbr q)               = Numbr (p + q)
-    add' (Numbr p) (F p' (Numbr q'))       = F (q' * p + p') (Numbr q')
-    add' (F p' (Numbr q')) (Numbr p)       = F (q' * p + p') (Numbr q')
-    add' (F p (Numbr q)) (F p' (Numbr q')) = F (p * q' + q * p') (Numbr (q * q'))
+add f f1 = add1 (simplify f) (simplify f1) where
+    add1 (Numbr p) (Numbr q)               = Numbr (p + q)
+    add1 (Numbr p) (F p1 (Numbr q1))       = F (q1 * p + p1) (Numbr q1)
+    add1 (F p1 (Numbr q1)) (Numbr p)       = F (q1 * p + p1) (Numbr q1)
+    add1 (F p (Numbr q)) (F p1 (Numbr q1)) = F (p * q1 + q * p1) (Numbr (q * q1))
 
 sub :: Fraction -> Fraction -> Fraction
-sub f f' = sub' (simplify f) (simplify f') where
-    sub' (Numbr p) (Numbr q)               = Numbr (p - q)
-    sub' (Numbr p) (F p' (Numbr q'))       = F (q' * p - p') (Numbr q')
-    sub' (F p' (Numbr q')) (Numbr p)       = F (q' * p - p') (Numbr q')
-    sub' (F p (Numbr q)) (F p' (Numbr q')) = F (p * q' - q * p') (Numbr (q * q'))
+sub f f1 = sub1 (simplify f) (simplify f1) where
+    sub1 (Numbr p) (Numbr q)               = Numbr (p - q)
+    sub1 (Numbr p) (F p1 (Numbr q1))       = F (q1 * p - p1) (Numbr q1)
+    sub1 (F p1 (Numbr q1)) (Numbr p)       = F (q1 * p - p1) (Numbr q1)
+    sub1 (F p (Numbr q)) (F p1 (Numbr q1)) = F (p * q1 - q * p1) (Numbr (q * q1))
 
 divid :: Fraction -> Fraction -> Fraction
-divid f f' = divid' (simplify f) (simplify f') where
-    divid' (Numbr p) (Numbr q)               = F p (Numbr q)
-    divid' (Numbr p) (F p' (Numbr q'))       = F (p * q') (Numbr p')
-    divid' (F p' (Numbr q')) (Numbr p)       = F p' (Numbr (q' * p) )
-    divid' (F p (Numbr q)) (F p' (Numbr q')) = F (p * q') (Numbr (q * p'))
+divid f f1 = divid1 (simplify f) (simplify f1) where
+    divid1 (Numbr p) (Numbr q)               = F p (Numbr q)
+    divid1 (Numbr p) (F p1 (Numbr q1))       = F (p * q1) (Numbr p1)
+    divid1 (F p1 (Numbr q1)) (Numbr p)       = F p1 (Numbr (q1 * p) )
+    divid1 (F p (Numbr q)) (F p1 (Numbr q1)) = F (p * q1) (Numbr (q * p1))
 
 -- This works by taking a possibly nested fraction, flattening
 -- it into a list and then folds (/) over the list to simplify the
@@ -120,13 +120,13 @@ denom (Numbr _)       = 1
 denom (F _ (Numbr n)) = n
 denom (F _ f@(F _ _)) = denom f
 
--- Takes a Fraction, simplifies it by a 'flatten and foldr' technique,
--- removed common divisors and finally resolves the fraction as a Float.
+-- Takes a Fraction, simplifies it by a "flatten and foldr" technique,
+-- removes common divisors and finally resolves the fraction as a Float.
 evalFrac :: Fraction -> Float
 evalFrac f = fromIntegral n / fromIntegral d where
     F n (Numbr d) = reduce . simplify $ f
 
-
+--           The 'a' coefficients     The 'b' coefficients     Depth
 contFrac :: (Integer -> Fraction) -> (Integer -> Numerator) -> Integer -> Fraction
 contFrac fa fb  = rf 0  where
       rf n t
