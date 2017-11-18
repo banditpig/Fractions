@@ -4,19 +4,17 @@ import           Fractions
 import           Text.Megaparsec
 import           Text.Megaparsec.String
 
-type Digit  = Int
+type Digit  = Integer
 type First  = Digit
 type Second = [Digit]
 type Repeat = [Digit]
 
 data FracStruc = FracStruc { first :: First, repeat :: Repeat} deriving (Show)
 
+
+
 dropSpaces :: Parser a -> Parser a
-dropSpaces p = do
-    space
-    v <- p
-    space
-    return v
+dropSpaces p = space *> p <* space
 
 digitSep :: Char -> Parser Digit
 digitSep = dropSpaces . digitSep' where
@@ -37,3 +35,14 @@ builder = char '[' *>
        (firstP >>= \firstDig -> repeatP >>= \rep -> return $ FracStruc firstDig rep)
        <* char ']'
 
+makeStruct :: String -> Maybe FracStruc
+makeStruct txt =
+    case runParser builder "" txt of
+        Right s -> Just s
+        _       -> Nothing
+
+genFa :: FracStruc -> (Integer -> Fraction)
+genFa (FracStruc fs rep) =
+    \n -> if n == 0 then Numbr fs else Numbr (g n) where
+        g n = rep !! ix where
+            ix = rem (fromIntegral (n - 1)) (length rep)
