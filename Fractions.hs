@@ -36,7 +36,7 @@ instance Num Fraction where
             F n1 d1 = simplify f
     fromInteger = Numbr
 
--- Allows the 1/1 operator to be used with Fraction
+-- Allows the / operator to be used with Fraction
 instance Fractional Fraction where
     fromRational x = F (numerator x) (Numbr (denominator x))
     (/) = divid
