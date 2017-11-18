@@ -11,8 +11,6 @@ type Repeat = [Digit]
 
 data FracStruc = FracStruc { first :: First, repeat :: Repeat} deriving (Show)
 
-
-
 dropSpaces :: Parser a -> Parser a
 dropSpaces p = space *> p <* space
 
@@ -29,7 +27,7 @@ firstP :: Parser Digit
 firstP = dropSpaces . digitSep $ ';'
 
 repeatP :: Parser Repeat
-repeatP = some . digitSep $ ','
+repeatP = many . digitSep $ ','
 
 builder = char '[' *>
        (firstP >>= \firstDig -> repeatP >>= \rep -> return $ FracStruc firstDig rep)
@@ -41,8 +39,15 @@ makeStruct txt =
         Right s -> Just s
         _       -> Nothing
 
-genFa :: FracStruc -> (Integer -> Fraction)
-genFa (FracStruc fs rep) =
+genFa :: Maybe FracStruc -> (Integer -> Fraction)
+genfa Nothing = const 1
+genFa (Just (FracStruc fs rep)) =
     \n -> if n == 0 then Numbr fs else Numbr (g n) where
         g n = rep !! ix where
             ix = rem (fromIntegral (n - 1)) (length rep)
+
+frac str  = contFrac fa fb  where
+    fa = genFa . makeStruct $ str
+    fb = const 1
+
+
