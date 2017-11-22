@@ -1,4 +1,6 @@
+{-# OPTIONS_GHC -Wall #-}
 module FractionParser where
+import           Control.Applicative
 import           Control.Monad
 import           Data.List
 import           Fractions
@@ -7,6 +9,7 @@ import           Text.Megaparsec.String
 type Digit  = Integer
 type First  = Digit
 type Repeat = [Digit]
+
 
 -- [a1;a2,a3,a4...] => first = a1, repeat = [a2,a3,a4]
 data FracStruc = FracStruc { first :: First, repeat :: Repeat} deriving (Show)
@@ -68,17 +71,17 @@ frac depth struc@(FracStruc fs rep)
         fa = genFa struc
         fb = const 1
 
+
+
+evalFracM :: Integer -> String -> Maybe Float
+evalFracM depth s = fracFromList depth s >>= Just . evalFrac
+
+-- A function for the 'a's for a 'fixed' FracStruc 1 [2]
+fa12 :: Integer -> Fraction
 fa12 = genFa (FracStruc 1 [2])
 
-evalFracM ::  Fraction -> Maybe Float
-evalFracM  = Just . evalFrac
-
+-- The nunber and the depth
 root :: Integer -> Integer -> Fraction
 root n = contFrac fa fb where
     fa   = fa12
     fb _ = n - 1
-
-
-
--- √61	[ 7; 1, 4, 3, 1, 2, 2, 1, 3, 4, 1, 14 ]
---[ 8; 1, 2, 1, 1, 5, 4, 5, 1, 1, 2, 1, 16 ]
