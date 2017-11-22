@@ -55,6 +55,8 @@ instance Ord Fraction where
 -- Fraction specific definitions of basic arithmetic ops. These are referenced
 -- in the previous typeclass definitions.
 mul :: Fraction -> Fraction -> Fraction
+mul (F 0 0 ) f  = f
+mul f (F 0 0 )  = f
 mul f f1 = mul1 (simplify f) (simplify f1) where
     mul1 (Numbr p) (Numbr q)               = Numbr (p * q)
     mul1 (Numbr p) (F p1 (Numbr q1))       = F (p * p1) (Numbr q1)
@@ -62,6 +64,8 @@ mul f f1 = mul1 (simplify f) (simplify f1) where
     mul1 (F p (Numbr q)) (F p1 (Numbr q1)) = F (p * p1) (Numbr (q * q1))
 
 add :: Fraction -> Fraction -> Fraction
+add (F 0 0 ) f  = f
+add f (F 0 0 )  = f
 add f f1 = add1 (simplify f) (simplify f1) where
     add1 (Numbr p) (Numbr q)               = Numbr (p + q)
     add1 (Numbr p) (F p1 (Numbr q1))       = F (q1 * p + p1) (Numbr q1)
@@ -69,6 +73,8 @@ add f f1 = add1 (simplify f) (simplify f1) where
     add1 (F p (Numbr q)) (F p1 (Numbr q1)) = F (p * q1 + q * p1) (Numbr (q * q1))
 
 sub :: Fraction -> Fraction -> Fraction
+sub (F 0 0 ) f  = f
+sub f (F 0 0 )  = f
 sub f f1 = sub1 (simplify f) (simplify f1) where
     sub1 (Numbr p) (Numbr q)               = Numbr (p - q)
     sub1 (Numbr p) (F p1 (Numbr q1))       = F (q1 * p - p1) (Numbr q1)
