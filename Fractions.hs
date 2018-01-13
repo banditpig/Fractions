@@ -1,12 +1,13 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS -Wall -fno-warn-type-defaults #-}
 module Fractions where
 import           Data.Ratio
-
+import           FractionParser
 type Numerator = Integer
 type Denominator = Integer
 {-
 So a fraction can be a simple
-3 or 3/4 or 3 / (4 / (...))
-or a recursive, continued, fraction:
+3 or 3/4 or 3 / (4 / (...)) - a recursive, continued, fraction:
 -}
 data Fraction  = Numbr Numerator | F Numerator Fraction
 
@@ -140,7 +141,7 @@ contFrac fa fb  = rf 0  where
         | otherwise =  fa n + F (fb n) (rf (n + 1) t)
 
 
--- Takes n/d and returns the CF in list form
+-- Takes n/d and returns the CF in list form. eg.
 --    41/13 = [3; 6, 2] = [3; 6, 1, 1]
 --    124/37 = [3; 2, 1, 5, 2] = [3; 2, 1, 5, 1, 1]
 --    5/12 = [0; 2, 2, 2] = [0; 2, 2, 1, 1]
@@ -149,6 +150,12 @@ toCF n d
     | d' == 0 = [a]
     | otherwise =  a : toCF d d' where
        (a, d') = divMod n d
+
+--data FracStruc = FracStruc { first :: First, repeat :: Repeat} deriving (Show)
+
+toFracStruc :: [Integer] -> FracStruc
+toFracStruc []     = FracStruc 0 []
+toFracStruc (x:xs) = FracStruc x xs
 
 root2 :: Integer -> Fraction
 root2  = contFrac fa fb where
@@ -167,3 +174,40 @@ phi  = contFrac fa fb  where
                 fb _ = 1
 
 
+
+-- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
+genFa ::  FracStruc -> (Integer -> Fraction)
+genFa (FracStruc fs rep) =
+    \n -> if n == 0 then Numbr fs else Numbr (g n) where
+        g n = rep !! ix where
+            ix = rem (fromIntegral (n - 1)) (length rep)
+-- From the supplied list format and the given depth perhaps create a Fraction
+fracFromList :: Integer ->  String -> Maybe Fraction
+fracFromList depth s =
+    case makeStruct s of
+        Nothing    -> Nothing
+        Just struc -> Just $ frac depth struc
+
+-- Create a fraction to the supplied depth using the given FracStruc
+-- fb assumed fixed at 1
+frac :: Integer -> FracStruc -> Fraction
+frac depth struc@(FracStruc fs rep)
+    | null rep = Numbr fs
+    | otherwise = contFrac fa fb  depth where
+        fa = genFa struc
+        fb = const 1
+
+
+
+evalFracM :: Integer -> String -> Maybe Float
+evalFracM depth s = fracFromList depth s >>= Just . evalFrac
+
+-- A function for the 'a's for a 'fixed' FracStruc 1 [2]
+fa12 :: Integer -> Fraction
+fa12 = genFa (FracStruc 1 [2])
+
+-- The nunber and the depth
+root :: Integer -> Integer -> Fraction
+root n = contFrac fa fb where
+    fa   = fa12
+    fb _ = n - 1
