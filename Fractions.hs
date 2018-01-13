@@ -139,6 +139,17 @@ contFrac fa fb  = rf 0  where
         | n > t = 0
         | otherwise =  fa n + F (fb n) (rf (n + 1) t)
 
+
+-- Takes n/d and returns the CF in list form
+--    41/13 = [3; 6, 2] = [3; 6, 1, 1]
+--    124/37 = [3; 2, 1, 5, 2] = [3; 2, 1, 5, 1, 1]
+--    5/12 = [0; 2, 2, 2] = [0; 2, 2, 1, 1]
+toCF :: Integer -> Integer -> [Integer]
+toCF n d
+    | d' == 0 = [a]
+    | otherwise =  a : toCF d d' where
+       (a, d') = divMod n d
+
 root2 :: Integer -> Fraction
 root2  = contFrac fa fb where
     fa 0 = 1
