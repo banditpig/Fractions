@@ -98,6 +98,7 @@ simplify f = foldr (/) lastFraction remainingFractions where
     lastFraction = last flat
     remainingFractions = takeWhile (/= lastFraction) flat
 
+-- =========================================================
 
 -- Remove common divisors
 -- eg reduce 6/10 -> 3/5, reduce 3/5 -> 3/5
@@ -142,38 +143,28 @@ contFrac fa fb  = rf 0  where
 
 
 -- Takes n/d and returns the CF in list form. eg.
---    41/13 = [3; 6, 2] = [3; 6, 1, 1]
---    124/37 = [3; 2, 1, 5, 2] = [3; 2, 1, 5, 1, 1]
---    5/12 = [0; 2, 2, 2] = [0; 2, 2, 1, 1]
-toCF :: Integer -> Integer -> [Integer]
-toCF n d
+--    41/13 = [3, 6, 2]
+--    124/37 = [3, 2, 1, 5, 2]
+--    5/12 = [0, 2, 2, 2]
+toCFList :: Integer -> Integer -> [Integer]
+toCFList n d
     | d' == 0 = [a]
-    | otherwise =  a : toCF d d' where
+    | otherwise =  a : toCFList d d' where
        (a, d') = divMod n d
 
 --data FracStruc = FracStruc { first :: First, repeat :: Repeat} deriving (Show)
-
 toFracStruc :: [Integer] -> FracStruc
 toFracStruc []     = FracStruc 0 []
 toFracStruc (x:xs) = FracStruc x xs
 
-root2 :: Integer -> Fraction
-root2  = contFrac fa fb where
-    fa 0 = 1
-    fa _ = 2
-    fb _ = 1
+convergents :: Fraction -> [Fraction]
+convergents (F n (Numbr d)) = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
+    fracStruc = toFracStruc (toCFList n d)
+    len (FracStruc _ r) = 1 + length r
 
-root5 :: Integer -> Fraction
-root5  = contFrac fa fb  where
-                fa 0 = 2
-                fa _ = 4
-                fb _ = 1
-phi :: Integer -> Fraction
-phi  = contFrac fa fb  where
-                fa _ = 1
-                fb _ = 1
-
-
+convergentDeltas :: Fraction -> [Fraction] -> [(Fraction, Float)]
+convergentDeltas f = map (\ fr -> (fr, abs f' - evalFrac fr)) where
+    f' = evalFrac f
 
 -- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
 genFa ::  FracStruc -> (Integer -> Fraction)
@@ -198,10 +189,9 @@ frac depth struc@(FracStruc fs rep)
         fb = const 1
 
 
-
 evalFracM :: Integer -> String -> Maybe Float
 evalFracM depth s = fracFromList depth s >>= Just . evalFrac
-
+-- 11839323
 -- A function for the 'a's for a 'fixed' FracStruc 1 [2]
 fa12 :: Integer -> Fraction
 fa12 = genFa (FracStruc 1 [2])
@@ -211,3 +201,19 @@ root :: Integer -> Integer -> Fraction
 root n = contFrac fa fb where
     fa   = fa12
     fb _ = n - 1
+
+root2 :: Integer -> Fraction
+root2  = contFrac fa fb where
+    fa 0 = 1
+    fa _ = 2
+    fb _ = 1
+
+root5 :: Integer -> Fraction
+root5  = contFrac fa fb  where
+                fa 0 = 2
+                fa _ = 4
+                fb _ = 1
+phi :: Integer -> Fraction
+phi  = contFrac fa fb  where
+                fa _ = 1
+                fb _ = 1
