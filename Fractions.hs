@@ -3,13 +3,15 @@
 module Fractions where
 import           Data.Ratio
 import           FractionParser
-type Numerator = Integer
+type Numerator   = Integer
 type Denominator = Integer
 {-
 So a fraction can be a simple
 3 or 3/4 or 3 / (4 / (...)) - a recursive, continued, fraction:
 -}
 data Fraction  = Numbr Numerator | F Numerator Fraction
+type CFList = [Integer]
+type Convergents = [Fraction]
 
 instance Show Fraction where
     show (Numbr n) =  show n ++ "/1"
@@ -146,25 +148,33 @@ contFrac fa fb  = rf 0  where
 --    41/13 = [3, 6, 2]
 --    124/37 = [3, 2, 1, 5, 2]
 --    5/12 = [0, 2, 2, 2]
-toCFList :: Integer -> Integer -> [Integer]
-toCFList n d
+toCFList :: Fraction -> CFList
+toCFList (F n (Numbr d))
     | d' == 0 = [a]
-    | otherwise =  a : toCFList d d' where
+    | otherwise =  a : toCFList (F d (Numbr d')) where
        (a, d') = divMod n d
+-- Reversing a CF list will give a fraction with the same numerator
+reverseCFList :: CFList -> CFList
+reverseCFList (0:xs) = reverse xs
+reverseCFList xs     = reverse xs
 
---data FracStruc = FracStruc { first :: First, repeat :: Repeat} deriving (Show)
-toFracStruc :: [Integer] -> FracStruc
+toFracStruc :: CFList -> FracStruc
 toFracStruc []     = FracStruc 0 []
 toFracStruc (x:xs) = FracStruc x xs
 
-convergents :: Fraction -> [Fraction]
+convergents :: Fraction -> Convergents
 convergents (F n (Numbr d)) = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
-    fracStruc = toFracStruc (toCFList n d)
+    fracStruc = toFracStruc (toCFList (F n (Numbr d)))
     len (FracStruc _ r) = 1 + length r
 
-convergentDeltas :: Fraction -> [Fraction] -> [(Fraction, Float)]
-convergentDeltas f = map (\ fr -> (fr, abs f' - evalFrac fr)) where
-    f' = evalFrac f
+convergentDeltas :: Convergents -> [(Fraction, Float)]
+convergentDeltas  cs = map (\ fr -> (fr, abs f' - evalFrac fr)) cs where
+    f' = evalFrac (last cs)
+
+convergentsFromCFList :: CFList -> Convergents
+convergentsFromCFList cs = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
+    fracStruc = toFracStruc cs
+    len (FracStruc _ r) = 1 + length r
 
 -- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
 genFa ::  FracStruc -> (Integer -> Fraction)
