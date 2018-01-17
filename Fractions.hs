@@ -153,6 +153,16 @@ toCFList (F n (Numbr d))
     | d' == 0 = [a]
     | otherwise =  a : toCFList (F d (Numbr d')) where
        (a, d') = divMod n d
+-- data Fraction  = Numbr Numerator | F Numerator Fraction
+
+toCFListI :: Fraction -> CFList
+toCFListI (Numbr n) = [n]
+toCFListI (F n f@(F _ _)) = n : toCFListI f
+toCFListI (F n (Numbr d))
+    | d' == 0 = [a]
+    | otherwise =  a : toCFListI (F d (Numbr d')) where
+       (a, d') = divMod n d
+
 -- Reversing a CF list will give a fraction with the same numerator
 reverseCFList :: CFList -> CFList
 reverseCFList (0:xs) = reverse xs
@@ -175,6 +185,24 @@ convergentsFromCFList :: CFList -> Convergents
 convergentsFromCFList cs = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
     fracStruc = toFracStruc cs
     len (FracStruc _ r) = 1 + length r
+
+
+cfFloat :: Float -> CFList
+cfFloat x = x' : cfFloat (1 / (x - fromIntegral x' )) where x' = truncate x
+
+cfSqrtN :: Integer -> CFList
+cfSqrtN x = takeWhile (/= a02) (cfSqrtN' x)  ++ [a02] where
+    a0 = truncate . sqrt . fromIntegral $ x
+    a02 = 2 * a0
+    cfSqrtN' x = [ ai | (_, _, ai) <- terms ] where
+      m0 = 0
+      d0 = 1
+      a0 = truncate . sqrt . fromIntegral $ x
+      terms = iterate nextTerm (m0, d0, a0)
+      nextTerm (mi, di, ai) = (mj, dj, aj) where
+            mj = di * ai - mi
+            dj = (x - mj * mj) `div` di
+            aj = (a0 + mj) `div` dj
 
 -- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
 genFa ::  FracStruc -> (Integer -> Fraction)
