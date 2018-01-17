@@ -153,15 +153,8 @@ toCFList (F n (Numbr d))
     | d' == 0 = [a]
     | otherwise =  a : toCFList (F d (Numbr d')) where
        (a, d') = divMod n d
--- data Fraction  = Numbr Numerator | F Numerator Fraction
 
-toCFListI :: Fraction -> CFList
-toCFListI (Numbr n) = [n]
-toCFListI (F n f@(F _ _)) = n : toCFListI f
-toCFListI (F n (Numbr d))
-    | d' == 0 = [a]
-    | otherwise =  a : toCFListI (F d (Numbr d')) where
-       (a, d') = divMod n d
+
 
 -- Reversing a CF list will give a fraction with the same numerator
 reverseCFList :: CFList -> CFList
@@ -190,6 +183,8 @@ convergentsFromCFList cs = [frac (toInteger d') fracStruc | d' <- [1..(len fracS
 cfFloat :: Float -> CFList
 cfFloat x = x' : cfFloat (1 / (x - fromIntegral x' )) where x' = truncate x
 
+-- All CF lists for sqrt are infinite and periodic. Period repeats when
+-- current term is twice the first one.
 cfSqrtN :: Integer -> CFList
 cfSqrtN x = takeWhile (/= a02) (cfSqrtN' x)  ++ [a02] where
     a0 = truncate . sqrt . fromIntegral $ x
