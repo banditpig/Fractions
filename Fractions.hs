@@ -180,23 +180,27 @@ convergentsFromCFList cs = [frac (toInteger d') fracStruc | d' <- [1..(len fracS
     len (FracStruc _ r) = 1 + length r
 
 
-cfFloat :: Float -> CFList
-cfFloat x = x' : cfFloat (1 / (x - fromIntegral x' )) where x' = truncate x
+cfListFloat :: Float -> CFList
+cfListFloat x = x' : cfListFloat (1 / (x - fromIntegral x' )) where x' = truncate x
 
+isSquare :: Integral a => a -> Bool
+isSquare n = sq * sq == n where sq = floor $ sqrt (fromIntegral n :: Double)
 -- All CF lists for sqrt are infinite and periodic. Period repeats when
 -- current term is twice the first one.
-cfSqrtN :: Integer -> CFList
-cfSqrtN x = takeWhile (/= a02) (cfSqrtN' x)  ++ [a02] where
-    a0 = truncate . sqrt . fromIntegral $ x
-    a02 = 2 * a0
-    cfSqrtN' x = [ ai | (_, _, ai) <- terms ] where
+cfListSqrtN :: Integer -> CFList
+cfListSqrtN n
+ | isSquare n = [floor . sqrt . fromIntegral $ n]
+ | otherwise = takeWhile (/= a02) (cfListSqrtN' n)  ++ [a02] where
+    a0 = truncate . sqrt . fromIntegral $ n
+    a02 = a0 * 2
+    cfListSqrtN' n = [ ai | (_, _, ai) <- terms ] where
       m0 = 0
       d0 = 1
-      a0 = truncate . sqrt . fromIntegral $ x
+      a0 = truncate . sqrt . fromIntegral $ n
       terms = iterate nextTerm (m0, d0, a0)
       nextTerm (mi, di, ai) = (mj, dj, aj) where
             mj = di * ai - mi
-            dj = (x - mj * mj) `div` di
+            dj = (n - mj * mj) `div` di
             aj = (a0 + mj) `div` dj
 
 -- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
