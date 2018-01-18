@@ -164,7 +164,7 @@ reverseCFList xs     = reverse xs
 toFracStruc :: CFList -> FracStruc
 toFracStruc []     = FracStruc 0 []
 toFracStruc (x:xs) = FracStruc x xs
-
+-- fs = toFracStruc . cfListSqrtN $  39 -- frc = frac 50 fs -- convergents frc
 convergents :: Fraction -> Convergents
 convergents (F n (Numbr d)) = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
     fracStruc = toFracStruc (toCFList (F n (Numbr d)))
@@ -175,7 +175,7 @@ convergentDeltas  cs = map (\ fr -> (fr, abs f' - evalFrac fr)) cs where
     f' = evalFrac (last cs)
 
 convergentsFromCFList :: CFList -> Convergents
-convergentsFromCFList cs = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
+convergentsFromCFList cs = [frac (toInteger d') fracStruc | d' <- [1..]] where
     fracStruc = toFracStruc cs
     len (FracStruc _ r) = 1 + length r
 
@@ -203,6 +203,13 @@ cfListSqrtN n
             dj = (n - mj * mj) `div` di
             aj = (a0 + mj) `div` dj
 
+-- Pells eqn. x^2 -dy^2 = 1
+notPellSolution d x y = x*x - d*y*y /= 1
+
+solvePell :: Integer -> (Integer, Integer)
+solvePell d = (x, y) where
+    -- cvgts = convergentsFromCFList . cfListSqrtN $ d
+    F x (Numbr y) = head . dropWhile (\(F p (Numbr q)) -> notPellSolution d p q) . convergentsFromCFList . cfListSqrtN $ d
 -- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
 genFa ::  FracStruc -> (Integer -> Fraction)
 genFa (FracStruc fs rep) =
