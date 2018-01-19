@@ -209,7 +209,14 @@ notPellSolution d x y = x*x - d*y*y /= 1
 solvePell :: Integer -> (Integer, Integer)
 solvePell d = (x, y) where
     F x (Numbr y) = head . dropWhile (\(F p (Numbr q)) -> notPellSolution d p q) . convergentsFromCFList . cfListSqrtN $ d
--- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
+solvePellAll :: Integer -> (Integer, Integer) -> [(Integer, Integer)]
+solvePellAll n (x1, y1) = [ (x', y') | (x', y') <- terms] where
+    terms = iterate  nextTerm (x1, y1)
+    nextTerm  (x, y) = (x1*x + n*y1*y, x1*y + y1*x)
+
+-- xk_+1= x1*xk + n*y1*yk
+-- yk_+1= x1*yk + y1*xk
+    -- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
 genFa ::  FracStruc -> (Integer -> Fraction)
 genFa (FracStruc fs rep) =
     \n -> if n == 0 then Numbr fs else Numbr (g n) where
