@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# OPTIONS -Wall -fno-warn-type-defaults #-}
+-- {-# OPTIONS -Wall -fno-warn-type-defaults #-}
 module Fractions where
+import           Data.List
 import           Data.Ratio
 import           FractionParser
 type Numerator   = Integer
@@ -155,7 +156,6 @@ toCFList (F n (Numbr d))
        (a, d') = divMod n d
 
 
-
 -- Reversing a CF list will give a fraction with the same numerator
 reverseCFList :: CFList -> CFList
 reverseCFList (0:xs) = reverse xs
@@ -164,21 +164,22 @@ reverseCFList xs     = reverse xs
 toFracStruc :: CFList -> FracStruc
 toFracStruc []     = FracStruc 0 []
 toFracStruc (x:xs) = FracStruc x xs
--- fs = toFracStruc . cfListSqrtN $  39 -- frc = frac 50 fs -- convergents frc
-convergents :: Fraction -> Convergents
-convergents (F n (Numbr d)) = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
-    fracStruc = toFracStruc (toCFList (F n (Numbr d)))
-    len (FracStruc _ r) = 1 + length r
 
-convergentDeltas :: Convergents -> [(Fraction, Float)]
-convergentDeltas  cs = map (\ fr -> (fr, abs f' - evalFrac fr)) cs where
-    f' = evalFrac (last cs)
+-- need to write this https://en.wikipedia.org/wiki/Continued_fraction#Finite_continued_fractions
+-- -- ...
+-- convergents :: Fraction -> Convergents
+-- convergents (F n (Numbr d)) = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
+--     fracStruc = toFracStruc (toCFList (F n (Numbr d)))
+--     len (FracStruc _ r) = 1 + length r
 
 convergentsFromCFList :: CFList -> Convergents
 convergentsFromCFList cs = [frac (toInteger d') fracStruc | d' <- [1..]] where
     fracStruc = toFracStruc cs
     len (FracStruc _ r) = 1 + length r
 
+convergentDeltas :: Convergents -> [(Fraction, Float)]
+convergentDeltas  cs = map (\ fr -> (fr, abs f - evalFrac fr)) cs where
+    f = evalFrac (last cs)
 
 cfListFloat :: Float -> CFList
 cfListFloat x = x' : cfListFloat (1 / (x - fromIntegral x' )) where x' = truncate x
@@ -187,9 +188,9 @@ isSquare :: Integral a => a -> Bool
 isSquare n = sq * sq == n where sq = floor $ sqrt (fromIntegral n :: Double)
 -- All CF lists for sqrt are infinite and periodic. Period repeats when
 -- current term is twice the first one.
-cfListSqrtN :: Integer -> CFList
-cfListSqrtN n
- | isSquare n = [floor . sqrt . fromIntegral $ n]
+cfListSqrtNFinite :: Integer -> CFList
+cfListSqrtNFinite n
+ | isSquare n = [floor $ sqrt (fromIntegral n :: Double)]
  | otherwise = takeWhile (/= a02) (cfListSqrtN' n)  ++ [a02] where
     a0 = truncate . sqrt . fromIntegral $ n
     a02 = a0 * 2
@@ -203,20 +204,58 @@ cfListSqrtN n
             dj = (n - mj * mj) `div` di
             aj = (a0 + mj) `div` dj
 
+cfListSqrtN :: Integer -> CFList
+cfListSqrtN n
+ | isSquare n = [floor $ sqrt (fromIntegral n :: Double)]
+ | otherwise = cfListSqrtN' n ++ [a02] where
+    a0 = truncate . sqrt . fromIntegral $ n
+    a02 = a0 * 2
+    cfListSqrtN' n = [ ai | (_, _, ai) <- terms ] where
+      m0 = 0
+      d0 = 1
+      a0 = truncate . sqrt . fromIntegral $ n
+      terms = iterate nextTerm (m0, d0, a0)
+      nextTerm (mi, di, ai) = (mj, dj, aj) where
+            mj = di * ai - mi
+            dj = (n - mj * mj) `div` di
+            aj = (a0 + mj) `div` dj
 -- Pells eqn. x^2 -dy^2 = 1
 notPellSolution d x y = x*x - d*y*y /= 1
+-- The convergents of a continued fraction expansion of x give the best rational
+--  approximations to x. Specifically, the only way a fraction can approximate x
+--   better than a convergent is
+--  if the fraction has a bigger denominator than the convergent.
+convergents :: CFList -> Convergents
+convergents [x] = [F x (Numbr 1)]
+convergents (a0 : a1 : as) = map (\(n, d) -> F n (Numbr d) ) terms
+    where
+      p0 = a0
+      q0 = 1
+      p1 = a1 * a0 + 1
+      q1 = a1
+      terms = (p0, q0) : (p1, q1) : zipWith3 nextConv terms (tail terms) as
+      nextConv (pi, qi) (pj, qj) ak = (pk, qk)
+          where
+            pk = ak * pj + pi
+            qk = ak * qj + qi
 
+convergentsFromFrac :: Fraction -> Convergents
+convergentsFromFrac = convergents . toCFList
+
+-- First or fundamental solution.
 solvePell :: Integer -> (Integer, Integer)
 solvePell d = (x, y) where
     F x (Numbr y) = head . dropWhile (\(F p (Numbr q)) -> notPellSolution d p q) . convergentsFromCFList . cfListSqrtN $ d
-solvePellAll :: Integer -> (Integer, Integer) -> [(Integer, Integer)]
-solvePellAll n (x1, y1) = [ (x', y') | (x', y') <- terms] where
-    terms = iterate  nextTerm (x1, y1)
+
+
+solvePellAll :: Integer -> [(Integer, Integer)]
+solvePellAll n  = [ (x', y') | (x', y') <- terms] where
+    (x1, y1) = solvePell n
+    terms = iterate nextTerm (x1, y1)
     nextTerm  (x, y) = (x1*x + n*y1*y, x1*y + y1*x)
 
--- xk_+1= x1*xk + n*y1*yk
--- yk_+1= x1*yk + y1*xk
-    -- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
+
+-- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
 genFa ::  FracStruc -> (Integer -> Fraction)
 genFa (FracStruc fs rep) =
     \n -> if n == 0 then Numbr fs else Numbr (g n) where
@@ -267,3 +306,5 @@ phi :: Integer -> Fraction
 phi  = contFrac fa fb  where
                 fa _ = 1
                 fb _ = 1
+x :: [Fraction] -> [Convergents]
+x  = map convergents . map toCFList
