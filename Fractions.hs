@@ -219,8 +219,7 @@ cfListSqrtN n
             mj = di * ai - mi
             dj = (n - mj * mj) `div` di
             aj = (a0 + mj) `div` dj
--- Pells eqn. x^2 -dy^2 = 1
-notPellSolution d x y = x*x - d*y*y /= 1
+
 -- The convergents of a continued fraction expansion of x give the best rational
 --  approximations to x. Specifically, the only way a fraction can approximate x
 --   better than a convergent is
@@ -242,11 +241,13 @@ convergents (a0 : a1 : as) = map (\(n, d) -> F n (Numbr d) ) terms
 convergentsFromFrac :: Fraction -> Convergents
 convergentsFromFrac = convergents . toCFList
 
+-- Pells eqn. x^2 - dy^2 = 1
+notPellSolution d x y = x*x - d*y*y /= 1
+
 -- First or fundamental solution.
 solvePell :: Integer -> (Integer, Integer)
 solvePell d = (x, y) where
-    F x (Numbr y) = head . dropWhile (\(F p (Numbr q)) -> notPellSolution d p q) . convergentsFromCFList . cfListSqrtN $ d
-
+    F x (Numbr y) = head . dropWhile (\(F p (Numbr q)) -> notPellSolution d p q) . convergents . cfListSqrtN $ d
 
 solvePellAll :: Integer -> [(Integer, Integer)]
 solvePellAll n  = [ (x', y') | (x', y') <- terms] where
@@ -254,6 +255,12 @@ solvePellAll n  = [ (x', y') | (x', y') <- terms] where
     terms = iterate nextTerm (x1, y1)
     nextTerm  (x, y) = (x1*x + n*y1*y, x1*y + y1*x)
 
+countDigits :: Integer -> Integer
+countDigits n = foldr (\_ a -> a + 1) 0  (show n)
+
+nthSolutionSize :: Int -> Integer -> (Integer, Integer)
+nthSolutionSize nth n = (countDigits x, countDigits y) where
+    (x, y) = last . take nth . solvePellAll $ n
 
 -- The fa function in contFrac fa fb is fully defined by the values in a FracStruc
 genFa ::  FracStruc -> (Integer -> Fraction)
@@ -261,6 +268,7 @@ genFa (FracStruc fs rep) =
     \n -> if n == 0 then Numbr fs else Numbr (g n) where
         g n = rep !! ix where
             ix = rem (fromIntegral (n - 1)) (length rep)
+
 -- From the supplied list format and the given depth perhaps create a Fraction
 fracFromList :: Integer ->  String -> Maybe Fraction
 fracFromList depth s =
@@ -280,7 +288,6 @@ frac depth struc@(FracStruc fs rep)
 
 evalFracM :: Integer -> String -> Maybe Float
 evalFracM depth s = fracFromList depth s >>= Just . evalFrac
--- 11839323
 -- A function for the 'a's for a 'fixed' FracStruc 1 [2]
 fa12 :: Integer -> Fraction
 fa12 = genFa (FracStruc 1 [2])
@@ -306,5 +313,4 @@ phi :: Integer -> Fraction
 phi  = contFrac fa fb  where
                 fa _ = 1
                 fb _ = 1
-x :: [Fraction] -> [Convergents]
-x  = map convergents . map toCFList
+
