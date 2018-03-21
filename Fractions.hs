@@ -165,13 +165,6 @@ toFracStruc :: CFList -> FracStruc
 toFracStruc []     = FracStruc 0 []
 toFracStruc (x:xs) = FracStruc x xs
 
--- need to write this https://en.wikipedia.org/wiki/Continued_fraction#Finite_continued_fractions
--- -- ...
--- convergents :: Fraction -> Convergents
--- convergents (F n (Numbr d)) = [frac (toInteger d') fracStruc | d' <- [1..(len fracStruc )]] where
---     fracStruc = toFracStruc (toCFList (F n (Numbr d)))
---     len (FracStruc _ r) = 1 + length r
-
 convergentsFromCFList :: CFList -> Convergents
 convergentsFromCFList cs = [frac (toInteger d') fracStruc | d' <- [1..]] where
     fracStruc = toFracStruc cs
@@ -221,9 +214,8 @@ cfListSqrtN n
             aj = (a0 + mj) `div` dj
 
 -- The convergents of a continued fraction expansion of x give the best rational
---  approximations to x. Specifically, the only way a fraction can approximate x
---   better than a convergent is
---  if the fraction has a bigger denominator than the convergent.
+-- approximations to x. Specifically, the only way a fraction can approximate x
+-- better than a convergent is if the fraction has a bigger denominator than the convergent.
 convergents :: CFList -> Convergents
 convergents [x] = [F x (Numbr 1)]
 convergents (a0 : a1 : as) = map (\(n, d) -> F n (Numbr d) ) terms
@@ -313,4 +305,3 @@ phi :: Integer -> Fraction
 phi  = contFrac fa fb  where
                 fa _ = 1
                 fb _ = 1
-
